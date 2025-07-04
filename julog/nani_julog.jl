@@ -15,6 +15,7 @@ clauses = @julog [
     door(dining_room,kitchen)<<= true,
     door(kitchen,cellar)<<= true,
     door(kitchen,office)<<= true,
+
     connect(X, Y) <<= door(X,Y),
     connect(X, Y) <<= door(Y,X),
     
@@ -40,40 +41,62 @@ clauses = @julog [
     where_food(X,Y) <<= is_contained_in(X,Y) & edible(X),
     where_food(X,Y) <<= is_contained_in(X,Y) & tastes_yucky(X),
 
-    here(kitchen) <<= true,
+    here(office) <<= true,
+    turned_off(flashlight) <<= true,
 
-    list_things(Place) <<= location(X, Place),
+    list_things(Place) <<= location(X, Place) ,
 
-    list_connections(Place) <<= connect(Place, X) & write(X),
-
+    list_connections(Place) <<= connect(Place, X),
 
     can_go(Place) <<= here(X) & connect(X, Place),
+    can_go(Place) <<= here(X) & 
+
     move(Place) <<= retract(here(X)) & asserta(here(Place)),
 
-    look <<= here(Place) & list_things(Place) & list_connections(Place),
+    # look and look_in do not work yet
+    look_in(Place) <<= here(Place) & write_prolog("You are in the ") & write_prolog(Place) &
+            write_prolog("You can see ") & list_things(Place) & 
+            write_prolog("You can go to ") & list_connections(Place),
+
+    look <<= here(Place) & write_prolog("You are in the ") & write_prolog(Place) &
+            write_prolog("You can see ") & list_things(Place) & 
+            write_prolog("You can go to ") & list_connections(Place),
 
     goto(Place) <<= can_go(Place) & move(Place),
+    
     can_take(Thing) <<= here(Place) & is_contained_in(Thing, Place), 
     can_take(Thing) <<= write_prolog("There is no ") & write_prolog(Thing) & write_prolog(" here") & fail,
+    
+    take(X) <<= can_take(X) & take_object(X),
+    take_object(X) <<= retract(location(X, _)) & assert(have(X)),
+
+    write_weight(1) <<= write_prolog("1 pound"),
+    write_weight(W) <<= write_prolog(W) & write_prolog(" pounds"),
+    move(Place) <<=  retract(here(X)) & asserta(here(Place))
+
+
 ]
 
 goals = @julog [is_contained_in(X, Y)];
 sat, subst = resolve(goals, clauses);
 subst
 
-goal2 = @julog [can_take(X)]
-sat2, subst2 = resolve(goal2, clauses);
-subst2
+resolve(@julog(can_take(X)), clauses)
 
+resolve(@julog(list_connections(X)), clauses)
 
-goal3 = @julog [list_connections(X)];
-sat3, subst3 = resolve(goal3, clauses);
-subst3
+resolve(@julog(here(X)), clauses)
 
-goal4 = @julog [here(X)];
-sat4, subst4 = resolve(goal4, clauses);
-subst4
+resolve(@julog(can_go(X)), clauses)
 
-goal5 = @julog [can_go(X)];
-sat5, subst5 = resolve(goal5, clauses);
-subst5
+resolve(@julog(where_food(X, Y)), clauses)
+
+resolve(@julog(look), clauses)
+
+resolve(@julog(look_in(X)), clauses)
+
+resolve(@julog(can_take(X)), clauses)
+resolve(@julog(can_take(flashlight)), clauses)
+resolve(@julog(take(flashlight)), clauses)
+resolve(@julog(has(X)), clauses)
+
